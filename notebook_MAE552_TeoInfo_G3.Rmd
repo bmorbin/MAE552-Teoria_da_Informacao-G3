@@ -77,8 +77,36 @@ ggplot(info, aes(x=reorder(gender, -table(gender)[gender])))+
 
 ```{r}
 info$diagnostic <- factor(info$diagnostic); levels(info$diagnostic)
+```
+
+```{r, out.width="80%", class.source = 'fold-hide'}
+ggplot(info, aes(x=reorder(diagnostic, -table(diagnostic)[diagnostic])))+
+  geom_bar(aes(fill=diagnostic), color="transparent")+
+  scale_fill_grey(end = 0.9, start=.5)+
+  geom_text(stat = 'count', aes(label = paste0(round((after_stat(count)/sum(after_stat(count)))*100), "%")), vjust = -0.5) +
+  scale_y_continuous(expand = expansion(mult=c(0,.15)))+
+  labs(x=NULL,y=NULL, title="Diagnóstico")+
+  theme(axis.text = element_text(angle = 45,hjust = 1, vjust=0))+
+  guides(fill="none")
+```
+
+```{r}
 range(info$age)
+cat(paste0(sum(info$age<=0)," entradas inválidas para idade  => ",round(sum(info$age<=0)/nrow(info)*100,2), "% da amostra")) # Porcentagem de dados inválidos para idade
 range(info[which(info$age>0),]$age)
+```
+
+```{r, class.source = 'fold-hide'}
+ggplot(subset(info[which(info$age>0),]), aes(x = age, y = after_stat(density))) +
+  geom_histogram(aes(y = ..density..), fill = "skyblue", color = "#0c0c0c", binwidth = 5, alpha = 0.9) +
+  geom_density(color = "cyan", linetype = "solid", linewidth = 1, fill="transparent") +
+  labs(x = "Idade", y = "Frequência relativa", subtitle ="(somente dados válidos)", title="Distribuição de idade na amostra")+
+  scale_y_continuous(expand = expansion(mult=c(0,.20)))
+```
+
+
+
+```{r}
 unique(info$datasetId)
 unique(info$tissue)
 ```
