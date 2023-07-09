@@ -8,10 +8,10 @@ par(bg="#14141400",
 )
 
 library(ggplot2)
-custom_theme <- theme(
-  panel.border = element_blank(),
-  panel.grid.major = element_blank(), 
-  panel.grid.minor = element_blank(),
+custom_theme <- theme_light()+theme(
+  # panel.border = element_blank(),
+  panel.grid.major = element_line(colour = "grey30"),
+  panel.grid.minor = element_line(colour = "grey30"),
   plot.background = element_rect(fill="transparent", color=NA_character_),
   legend.box.background = element_rect(fill="transparent", color=NA_character_),
   legend.key = element_rect(fill="transparent", color=NA_character_),

@@ -244,6 +244,19 @@ li.tocify-item.list-group-item:hover{
   color: white;
 }
 
+.btn-default {
+    color: #bf00aa !important;
+    background-color: transparent !important;
+    border-color: transparent !important;
+    font-family: monospace!important;
+}
+
+.btn-default:hover, .btn-default.focus, .btn-default:focus, .btn.focus, .btn:focus, .btn:hover, .btn.active.focus, .btn.active:focus, .btn.focus, .btn:active.focus, .btn:active:focus, .btn:focus {
+    color: white;
+    background-color: transparent !important;
+    border-color: transparent !important;
+}
+
 </style>
 
 
