@@ -39,9 +39,58 @@ par(bg="#14141400",
 
 <h3>Descrição do estudo</h3>
 
+Now, the connection between clusterization and entropy arises from the idea that when you successfully cluster a dataset, you are effectively reducing the uncertainty or randomness within each cluster. A well-defined cluster contains data points that are similar to each other and dissimilar to points in other clusters. This reduction in uncertainty can be seen as a form of data compression.
+
+When you have a dataset with well-separated clusters, you can encode each cluster with a shorter representation (e.g., a cluster centroid or a label) instead of encoding each individual data point. This compression reduces the amount of information required to represent the dataset as a whole. Consequently, the entropy of the clustered dataset is lower than the entropy of the original, unclustered dataset.
+
+In other words, clusterization can be seen as a form of data compression that aims to maximize the compression ratio by grouping similar data points together, thus reducing the entropy of the data.
+
 # Problema
 
+The entropy formula itself is not directly used to separate data into clusters. Instead, it is used to quantify the uncertainty or randomness within a cluster or a distribution. To separate data into clusters, you would typically use clustering algorithms or techniques such as K-means, hierarchical clustering, or DBSCAN, among others.
+
+However, once you have obtained the clusters using a clustering algorithm, you can calculate the entropy of each cluster to assess the degree of uncertainty or randomness within that cluster. Here's a general approach:
+
+1. Perform Clustering: Apply a clustering algorithm of your choice to partition the data into clusters. Each data point will be assigned to a specific cluster based on some similarity or distance metric.
+
+2. Calculate Cluster Entropy: Once you have the clusters, you can calculate the entropy for each cluster individually. To do this, follow these steps:
+   a. For each cluster, compute the probability distribution of the classes or values within that cluster. This distribution represents the relative frequencies of different classes or values within the cluster.
+   b. Use the entropy formula (H(X) = - Σ P(x) * log2(P(x))) to calculate the entropy of each cluster based on its probability distribution.
+   c. The entropy value will indicate the level of uncertainty or randomness within each cluster. Lower entropy values indicate more homogeneous clusters, where data points are similar to each other and have a predictable distribution, while higher entropy values indicate more diverse or mixed clusters.
+
+3. Analyze Results: Examine the entropy values of the clusters to gain insights into the clustering quality. Lower entropy clusters are generally considered more well-defined, while higher entropy clusters may indicate more ambiguity or overlap between data points.
+
+Keep in mind that clustering and entropy calculation are separate steps in the analysis. Clustering determines the assignment of data points to clusters, while entropy provides a measure of uncertainty or randomness within each cluster.
+
 # Proposta 
+
+Information gain is another concept from information theory that can be used to evaluate the quality of clustering or the effectiveness of features in separating data into clusters. It measures the reduction in entropy achieved by partitioning the data based on a particular feature or attribute.
+
+Here's how information gain can be used in the context of clustering:
+
+1. Calculate the Initial Entropy:
+   Calculate the entropy of the target variable or the distribution of classes in the entire dataset before clustering. This will serve as the baseline entropy.
+
+2. Perform Clustering:
+   Apply a clustering algorithm to partition the data into clusters based on a set of features or attributes. Each data point will be assigned to a specific cluster.
+
+3. Calculate Cluster Entropy:
+   For each cluster obtained from the clustering algorithm, calculate the entropy of the target variable within that cluster. This will involve computing the probability distribution of classes within each cluster and then calculating the entropy using the formula: H(X) = - Σ P(x) * log2(P(x)).
+
+4. Calculate Information Gain:
+   Information gain is calculated by comparing the initial entropy (step 1) with the entropy of each cluster (step 3). The information gain achieved by partitioning the data based on a particular feature or attribute is given by:
+   
+   Information Gain = Initial Entropy - Σ (Proportion of data in each cluster * Cluster Entropy)
+
+   The proportion of data in each cluster can be determined by dividing the number of data points in the cluster by the total number of data points.
+
+5. Evaluate Information Gain:
+   Higher information gain indicates that the feature or attribute used for clustering has effectively reduced the uncertainty or randomness within the clusters. It suggests that the chosen feature provides valuable information for separating the data into distinct clusters.
+
+6. Iterative Feature Selection:
+   You can repeat steps 2 to 5 with different features or attributes to compare their information gain values. This can help in identifying the most informative features for clustering or in prioritizing the order of feature selection.
+
+Information gain is particularly useful in decision tree-based clustering algorithms, where features are recursively selected to optimize the separation of data into clusters. It helps in identifying the most discriminative features that contribute the most to cluster formation.
 
 ## Roteiro
 
@@ -50,13 +99,14 @@ par(bg="#14141400",
 ```{r}
 # Carregando pacotes
 library(tidyverse)
+library(cluster)
 ```
 
 ### Conjunto de dados
 
 ```{r}
 load("glioma.RData") # geneInfo ; gliomaGSE52009 ; targetInfoGlioma
-glioma <- gliomaGSE52009[1:1000,]; as.data.frame(glioma)
+glioma <- gliomaGSE52009[1:500,]; as.data.frame(glioma)
 info <- targetInfoGlioma; rownames(info) <- NULL; info |> select(colnames(info[,-1]),FileName)
 ```
 
@@ -104,97 +154,29 @@ ggplot(subset(info[which(info$age>0),]), aes(x = age, y = after_stat(density))) 
   scale_y_continuous(expand = expansion(mult=c(0,.20)))
 ```
 
-
-
 ```{r}
 unique(info$datasetId)
 unique(info$tissue)
 ```
 
-
-
 ### Agrupamento dos genes
+
+```{r}
+mg <- glioma
+nmg <- scale(t(mg))
+nmg <- t(nmg)
+d<-dist(nmg,method = "euclidean")
+```
+
+```{r}
+hc1<-hclust(d,method="ward.D")
+plot(hc1)
+```
+
 
 ### Distribuição unificada por cluster
 
 ### Discriminação de características
 
 # Conclusão
-
-
-```{r}
-# library(cluster)
-```
-
-
-```{r}
-# mg <- glioma
-# mtcars
-```
-
-```{r}
-# nmg <- scale(t(mg))
-# nmg <- t(nmg)
-# d<-dist(nmg,method = "euclidean")
-```
-
-```{r}
-# hc1<-hclust(d,method="ward.D")
-# plot(hc1)
-
-#ver se em cada grupo da pra discriminar tal caracatetiriscva
-```
-
-
-Now, the connection between clusterization and entropy arises from the idea that when you successfully cluster a dataset, you are effectively reducing the uncertainty or randomness within each cluster. A well-defined cluster contains data points that are similar to each other and dissimilar to points in other clusters. This reduction in uncertainty can be seen as a form of data compression.
-
-When you have a dataset with well-separated clusters, you can encode each cluster with a shorter representation (e.g., a cluster centroid or a label) instead of encoding each individual data point. This compression reduces the amount of information required to represent the dataset as a whole. Consequently, the entropy of the clustered dataset is lower than the entropy of the original, unclustered dataset.
-
-In other words, clusterization can be seen as a form of data compression that aims to maximize the compression ratio by grouping similar data points together, thus reducing the entropy of the data.
-
----
-
-The entropy formula itself is not directly used to separate data into clusters. Instead, it is used to quantify the uncertainty or randomness within a cluster or a distribution. To separate data into clusters, you would typically use clustering algorithms or techniques such as K-means, hierarchical clustering, or DBSCAN, among others.
-
-However, once you have obtained the clusters using a clustering algorithm, you can calculate the entropy of each cluster to assess the degree of uncertainty or randomness within that cluster. Here's a general approach:
-
-1. Perform Clustering: Apply a clustering algorithm of your choice to partition the data into clusters. Each data point will be assigned to a specific cluster based on some similarity or distance metric.
-
-2. Calculate Cluster Entropy: Once you have the clusters, you can calculate the entropy for each cluster individually. To do this, follow these steps:
-   a. For each cluster, compute the probability distribution of the classes or values within that cluster. This distribution represents the relative frequencies of different classes or values within the cluster.
-   b. Use the entropy formula (H(X) = - Σ P(x) * log2(P(x))) to calculate the entropy of each cluster based on its probability distribution.
-   c. The entropy value will indicate the level of uncertainty or randomness within each cluster. Lower entropy values indicate more homogeneous clusters, where data points are similar to each other and have a predictable distribution, while higher entropy values indicate more diverse or mixed clusters.
-
-3. Analyze Results: Examine the entropy values of the clusters to gain insights into the clustering quality. Lower entropy clusters are generally considered more well-defined, while higher entropy clusters may indicate more ambiguity or overlap between data points.
-
-Keep in mind that clustering and entropy calculation are separate steps in the analysis. Clustering determines the assignment of data points to clusters, while entropy provides a measure of uncertainty or randomness within each cluster.
-
-
-Information gain is another concept from information theory that can be used to evaluate the quality of clustering or the effectiveness of features in separating data into clusters. It measures the reduction in entropy achieved by partitioning the data based on a particular feature or attribute.
-
-Here's how information gain can be used in the context of clustering:
-
-1. Calculate the Initial Entropy:
-   Calculate the entropy of the target variable or the distribution of classes in the entire dataset before clustering. This will serve as the baseline entropy.
-
-2. Perform Clustering:
-   Apply a clustering algorithm to partition the data into clusters based on a set of features or attributes. Each data point will be assigned to a specific cluster.
-
-3. Calculate Cluster Entropy:
-   For each cluster obtained from the clustering algorithm, calculate the entropy of the target variable within that cluster. This will involve computing the probability distribution of classes within each cluster and then calculating the entropy using the formula: H(X) = - Σ P(x) * log2(P(x)).
-
-4. Calculate Information Gain:
-   Information gain is calculated by comparing the initial entropy (step 1) with the entropy of each cluster (step 3). The information gain achieved by partitioning the data based on a particular feature or attribute is given by:
-   
-   Information Gain = Initial Entropy - Σ (Proportion of data in each cluster * Cluster Entropy)
-
-   The proportion of data in each cluster can be determined by dividing the number of data points in the cluster by the total number of data points.
-
-5. Evaluate Information Gain:
-   Higher information gain indicates that the feature or attribute used for clustering has effectively reduced the uncertainty or randomness within the clusters. It suggests that the chosen feature provides valuable information for separating the data into distinct clusters.
-
-6. Iterative Feature Selection:
-   You can repeat steps 2 to 5 with different features or attributes to compare their information gain values. This can help in identifying the most informative features for clustering or in prioritizing the order of feature selection.
-
-Information gain is particularly useful in decision tree-based clustering algorithms, where features are recursively selected to optimize the separation of data into clusters. It helps in identifying the most discriminative features that contribute the most to cluster formation.
 
