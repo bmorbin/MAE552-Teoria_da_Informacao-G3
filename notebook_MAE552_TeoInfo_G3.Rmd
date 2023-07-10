@@ -180,7 +180,7 @@ for(clust in 1:num_cluster_init){
   if(is.null(nrow(gp))) {
     next
   } else{
-    bounds <- apply(gp,MARGIN = 2, FUN = function(x) quantile(x,c(0.20,0.80))) # definindo os intervalos interquantil para cada indivíduo nesse conjunto de genes
+    bounds <- apply(gp,MARGIN = 2, FUN = function(x) quantile(x,c(0.225,0.775))) # definindo os intervalos interquantil para cada indivíduo nesse conjunto de genes
     
     # identificando cada intensidade dentro do cluster se está dentro do interquantil do indíviduo
     in_bound <- as.data.frame(lapply(1:ncol(gp), FUN= function(i) {as.numeric(between(gp[,i],bounds[1,i],bounds[2,i]))})); colnames(in_bound) <- colnames(bounds); rownames(in_bound) <- rownames(gp)
@@ -224,10 +224,11 @@ for(i in 1:length(genes.clusters)){
 ```
 
 ```{r}
-ind_bound <- max(quantile(unlist(mutualinfo_clust),0.35)[[1]],1); ind_bound # métrica para clusters consistentes
+ind_bound <- max(quantile(unlist(mutualinfo_clust),0.5)[[1]],1); ind_bound # métrica para clusters consistentes
 
 clusters_consistentes <- which(mutualinfo_clust<ind_bound); clusters_consistentes # Clusters consistentes (com distribuição de intensidade luminosa similar)
 ```
+
 ```{r}
 df_consistentes <- data.frame()
 for(clust in clusters_consistentes){
@@ -239,6 +240,12 @@ for(clust in clusters_consistentes){
 # distribuições das intensidades lumninosas unificada por cluster
 df_consistentes
 ```
+
+```{r}
+# amplitude da intensidade luminosa observada no gene sob a amostra de indivíduos
+apply(df_consistentes, MARGIN = 1, function(x) diff(range(x)))
+```
+
 
 ### Discriminação de características
 
@@ -332,7 +339,7 @@ for(clust in clusters_consistentes){
   text = element_text(size=8)
   )
   
-  cat("<pre>--- Cluster ", clust, ":</pre>","\n")
+  cat(paste0("<pre>--- Cluster ", clust, ": \n\tInformação mútua: ",format(round(mutualinfo_clust[[clust]],2),width = 6, nsmall = 2),"\n\tAmplitude de luminosidade: ",diff(range(df_consistentes[as.character(clust),])),"</pre>","\n"))
   cat("\n")
   print(ptot1)
   print(ptot2)
