@@ -66,7 +66,6 @@ library(dplyr)
 library(cluster)
 library(infotheo)
 library(stringr)
-# library(ggpubr)
 library(patchwork)
 ```
 
@@ -132,7 +131,7 @@ unique(info$tissue)
 
 Aplica-se um agrupamento hierárquico para simplificar conjunto de genes que apresentam mesma intensidade de luminosidade para cada indivíduo. Dessa forma, e levando em consideração que os dados são coletados sob a mesma medida, opta-se por não padronizá-los. Caso fossem padronizados, algumas intensidades não expressivas poderiam ser conectadas com outras mais expressivas originalmente (quando considerados os valores não padronizados).
 
-```{r}
+```{r, echo=F, eval=F}
 custom_dist <- function(x, y) exp((x-y)**2) # penaliza mais para grandes erros
 
 d <- proxy::dist(glioma[,1], method=custom_dist)
@@ -141,10 +140,15 @@ for(i in 2:ncol(glioma)){
 }
 ```
 
+```{r}
+d <- dist(glioma, method = "euclidean")
+```
+
+
 Para a junção dos clusters, tem-se algumas ordens de hierarquização, tais quais:
 
 <div style="display: flex; justify-content: center;padding:10px">
-<img src="linkages.png" alt="Linkages representação" style="max-height: 80vh; padding: 15px; max-width:100% !important;object-fit:contain"/>
+<img src="linkages.png" alt="Linkages representação" style="max-height: 80vh; padding: 15px; max-width:100% !important;object-fit:contain; filter: grayscale(1) invert(.95); background-color: #ffffff;"/>
 </div>
 
 - *Single linkage*: É a distância mais curta entre quaisquer dois pontos nos dois grupos.
