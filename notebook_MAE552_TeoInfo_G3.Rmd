@@ -243,7 +243,7 @@ df_consistentes
 
 ```{r}
 # amplitude da intensidade luminosa observada no gene sob a amostra de indivíduos
-apply(df_consistentes, MARGIN = 1, function(x) diff(range(x)))
+apply(df_consistentes, MARGIN = 1, function(x) round(diff(range(x)),2))
 ```
 
 
@@ -339,7 +339,98 @@ for(clust in clusters_consistentes){
   text = element_text(size=8)
   )
   
-  cat(paste0("<pre>--- Cluster ", clust, ": \n\tInformação mútua: ",format(round(mutualinfo_clust[[clust]],2),width = 6, nsmall = 2),"\n\tAmplitude de luminosidade: ",diff(range(df_consistentes[as.character(clust),])),"</pre>","\n"))
+  cat(paste0("<pre>--- Cluster ", clust, ": \n\tInformação mútua: ",format(round(mutualinfo_clust[[clust]],2),width = 6, nsmall = 2),"\n\tAmplitude de luminosidade: ",round(diff(range(df_consistentes[as.character(clust),])),2),"</pre>","\n"))
+  cat("\n")
+  print(ptot1)
+  print(ptot2)
+  cat("\n\n")
+}
+```
+<h4>Genes ignorados</h4>
+
+```{r}
+# identificando genes ignorados com alta amplitude de intensidade luminosa apresentanda na amostra
+genes_ignorados <- unlist(genes.clusters[-clusters_consistentes])
+amplitude_ignorados <- apply(glioma[genes_ignorados,], MARGIN=1, function(x) diff(range(x)))
+
+# algumas características dessas amplitudes
+summary(amplitude_ignorados)
+
+# selecionando os de maiores amplitudes
+alta_amplitude <- names(amplitude_ignorados[which(amplitude_ignorados>6)])
+```
+
+```{r, class.source = 'fold-hide', results='asis', out.width="80%", fig.asp=3/7}
+for(gene in alta_amplitude){
+  meio_p1 <- sum(range(glioma[as.character(gene),valid_gender$id]))/2
+  med_p1 <- median(unlist(glioma[as.character(gene),valid_gender$id]))
+  leg_dir_p1 <- ifelse(med_p1<meio_p1, 1, 0)
+  
+  p1 <- data.frame(int_luz = unlist(glioma[as.character(gene),valid_gender$id]), gender = valid_gender$gender) |> 
+    ggplot(aes(x = int_luz, fill = factor(gender), color=factor(gender))) +
+    geom_density(alpha = 0.2) + 
+    scale_fill_manual(values = c(male="#1775ff",female="#ff371c"), name=NULL)+
+    scale_color_manual(values = c(male="#1775ff",female="#ff371c"), name=NULL)+
+    scale_y_continuous(expand = expansion(mult=c(0,.10)))+
+    scale_x_continuous(expand= c(0,0))+
+    theme(legend.position = c(leg_dir_p1,1), legend.justification = c(leg_dir_p1,1), legend.background = element_rect(fill = "#00000050"), plot.title = element_text(hjust=0), legend.key = element_rect(color="transparent", fill="transparent"))+
+    labs(x= "Intensidade luminosa", y="Densidade", title="Gênero")
+  
+  meio_p2 <- sum(range(glioma[as.character(gene),valid_age$id]))/2
+  med_p2 <- median(unlist(glioma[as.character(gene),valid_age$id]))
+  leg_dir_p2 <- ifelse(med_p2<meio_p2, 1, 0)
+  
+  p2 <- data.frame(int_luz = unlist(glioma[as.character(gene),valid_age$id]), age = valid_age$cat_age) |> 
+    ggplot(aes(x = int_luz, fill = factor(age), color=factor(age))) +
+    geom_density(alpha = 0.2)+
+    scale_fill_discrete(name=NULL)+
+    scale_color_discrete(name=NULL)+
+    scale_y_continuous(expand = expansion(mult=c(0,.10)))+
+    scale_x_continuous(expand= c(0,0))+
+    theme(legend.position = c(leg_dir_p2,1), legend.justification = c(leg_dir_p2,1), legend.background = element_rect(fill = "#00000050"), plot.title = element_text(hjust=0), legend.key = element_rect(color="transparent", fill="transparent"))+
+    labs(x= "Intensidade luminosa", y="Densidade", title="Faixa etária")
+  
+  meio_p34 <- sum(range(glioma[as.character(gene),valid_diag$id]))/2
+  med_p34 <- median(unlist(glioma[as.character(gene),valid_diag$id]))
+  leg_dir_p34 <- ifelse(med_p34<meio_p34, 1, 0)
+  
+  p3 <- data.frame(int_luz = unlist(glioma[as.character(gene),valid_diag$id]), diagnostic = valid_diag$diagnostic) |> 
+    ggplot(aes(x = int_luz, fill = factor(diagnostic), color=factor(diagnostic))) +
+    geom_density(alpha = 0.2) + 
+    guides(fill=guide_legend(title=NULL), color=guide_legend(title=NULL))+
+    scale_y_continuous(expand = expansion(mult=c(0,.10)))+
+    scale_x_continuous(expand= c(0,0))+
+    theme(legend.position = c(leg_dir_p34,1), legend.justification = c(leg_dir_p34,1), legend.background = element_rect(fill = "#00000050"), plot.title = element_text(hjust=0), legend.key = element_rect(color="transparent", fill="transparent"))+
+    labs(x= "Intensidade luminosa", y="Densidade", title="Diagnóstico")
+  
+  p4 <- data.frame(int_luz = unlist(glioma[as.character(gene),valid_diag$id]), diagnostic = valid_diag$diag_type) |> 
+    ggplot(aes(x = int_luz, fill = factor(diagnostic), color=factor(diagnostic))) +
+    geom_density(alpha = 0.2) + 
+    scale_fill_manual(values=c("anaplastic"="#5ed19f","plastic"="#c753f5"))+
+    scale_color_manual(values=c("anaplastic"="#5ed19f","plastic"="#c753f5"))+
+    guides(fill=guide_legend(title=NULL), color=guide_legend(title=NULL))+
+    scale_y_continuous(expand = expansion(mult=c(0,.10)))+
+    scale_x_continuous(expand= c(0,0))+
+    theme(legend.position = c(leg_dir_p34,1), legend.justification = c(leg_dir_p34,1), legend.background = element_rect(fill = "#00000050"), plot.title = element_text(hjust=0), legend.key = element_rect(color="transparent", fill="transparent"))+
+    labs(x= "Intensidade luminosa", y="Densidade", title="Tipo de diagnóstico")
+  
+  ptot1 <- p1+p2+plot_layout(ncol = 2) & theme(
+  panel.border = element_blank(),
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(),
+  plot.background = element_rect(fill="#0c0c0c", color="#0c0c0c"),
+  text = element_text(size=8)
+  )
+  
+  ptot2 <- p3+p4+plot_layout(ncol = 2) & theme(
+  panel.border = element_blank(),
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(),
+  plot.background = element_rect(fill="#0c0c0c", color="#0c0c0c"),
+  text = element_text(size=8)
+  )
+  
+  cat(paste0("<pre>--- Gene ", gene, ": \n\tAmplitude de luminosidade: ",round(diff(range(glioma[as.character(gene),])),2),"</pre>","\n"))
   cat("\n")
   print(ptot1)
   print(ptot2)
