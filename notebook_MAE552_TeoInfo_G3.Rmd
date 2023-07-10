@@ -7,7 +7,7 @@ output:
     number_sections: true
     css: "settings/style.css"
     toc: true
-    toc_depth: 4
+    toc_depth: 3
     toc_float: 
       collapsed: false
       smooth_scroll: false
@@ -39,60 +39,23 @@ par(bg="#14141400",
 
 <h3>Descrição do estudo</h3>
 
-Now, the connection between clusterization and entropy arises from the idea that when you successfully cluster a dataset, you are effectively reducing the uncertainty or randomness within each cluster. A well-defined cluster contains data points that are similar to each other and dissimilar to points in other clusters. This reduction in uncertainty can be seen as a form of data compression.
-
-When you have a dataset with well-separated clusters, you can encode each cluster with a shorter representation (e.g., a cluster centroid or a label) instead of encoding each individual data point. This compression reduces the amount of information required to represent the dataset as a whole. Consequently, the entropy of the clustered dataset is lower than the entropy of the original, unclustered dataset.
-
-In other words, clusterization can be seen as a form of data compression that aims to maximize the compression ratio by grouping similar data points together, thus reducing the entropy of the data.
+Para cada indivíduo pertencente ao estudo, foram amostrados genes individuais e realizada a medição da intensidade da luz em cima de cada um deles. O banco de dados disponibilizará os valores dessa intensidade individualmente para cada gene de cada indivíduo.
 
 # Problema
 
-The entropy formula itself is not directly used to separate data into clusters. Instead, it is used to quantify the uncertainty or randomness within a cluster or a distribution. To separate data into clusters, you would typically use clustering algorithms or techniques such as K-means, hierarchical clustering, or DBSCAN, among others.
-
-However, once you have obtained the clusters using a clustering algorithm, you can calculate the entropy of each cluster to assess the degree of uncertainty or randomness within that cluster. Here's a general approach:
-
-1. Perform Clustering: Apply a clustering algorithm of your choice to partition the data into clusters. Each data point will be assigned to a specific cluster based on some similarity or distance metric.
-
-2. Calculate Cluster Entropy: Once you have the clusters, you can calculate the entropy for each cluster individually. To do this, follow these steps:
-   a. For each cluster, compute the probability distribution of the classes or values within that cluster. This distribution represents the relative frequencies of different classes or values within the cluster.
-   b. Use the entropy formula (H(X) = - Σ P(x) * log2(P(x))) to calculate the entropy of each cluster based on its probability distribution.
-   c. The entropy value will indicate the level of uncertainty or randomness within each cluster. Lower entropy values indicate more homogeneous clusters, where data points are similar to each other and have a predictable distribution, while higher entropy values indicate more diverse or mixed clusters.
-
-3. Analyze Results: Examine the entropy values of the clusters to gain insights into the clustering quality. Lower entropy clusters are generally considered more well-defined, while higher entropy clusters may indicate more ambiguity or overlap between data points.
-
-Keep in mind that clustering and entropy calculation are separate steps in the analysis. Clustering determines the assignment of data points to clusters, while entropy provides a measure of uncertainty or randomness within each cluster.
+Com base no banco de dados, queremos verificar se existe alguma relação entre esses  valores da intensidade da luz em cima de cada gene com características pessoais de cada indivíduo.
 
 # Proposta 
 
-Information gain is another concept from information theory that can be used to evaluate the quality of clustering or the effectiveness of features in separating data into clusters. It measures the reduction in entropy achieved by partitioning the data based on a particular feature or attribute.
-
-Here's how information gain can be used in the context of clustering:
-
-1. Calculate the Initial Entropy:
-   Calculate the entropy of the target variable or the distribution of classes in the entire dataset before clustering. This will serve as the baseline entropy.
-
-2. Perform Clustering:
-   Apply a clustering algorithm to partition the data into clusters based on a set of features or attributes. Each data point will be assigned to a specific cluster.
-
-3. Calculate Cluster Entropy:
-   For each cluster obtained from the clustering algorithm, calculate the entropy of the target variable within that cluster. This will involve computing the probability distribution of classes within each cluster and then calculating the entropy using the formula: H(X) = - Σ P(x) * log2(P(x)).
-
-4. Calculate Information Gain:
-   Information gain is calculated by comparing the initial entropy (step 1) with the entropy of each cluster (step 3). The information gain achieved by partitioning the data based on a particular feature or attribute is given by:
-   
-   Information Gain = Initial Entropy - Σ (Proportion of data in each cluster * Cluster Entropy)
-
-   The proportion of data in each cluster can be determined by dividing the number of data points in the cluster by the total number of data points.
-
-5. Evaluate Information Gain:
-   Higher information gain indicates that the feature or attribute used for clustering has effectively reduced the uncertainty or randomness within the clusters. It suggests that the chosen feature provides valuable information for separating the data into distinct clusters.
-
-6. Iterative Feature Selection:
-   You can repeat steps 2 to 5 with different features or attributes to compare their information gain values. This can help in identifying the most informative features for clustering or in prioritizing the order of feature selection.
-
-Information gain is particularly useful in decision tree-based clustering algorithms, where features are recursively selected to optimize the separation of data into clusters. It helps in identifying the most discriminative features that contribute the most to cluster formation.
+Para a resolução do problema, agruparemos os genes pelo valor da intensidade de luz e utilizaremos a informação mútua vista em aula para checarmos se os genes introduzidos em cada cluster possuem distribuição parecida ou não. Após essa checagem, será feita uma distribuição única da intensidade de luz para cada cluster e a mesma será utilizada para caracterizar cada conjunto de cluster em relação às características do indivíduo.
 
 ## Roteiro
+
+- Análise descritiva de todos indivíduos do estudo;
+- Sintetização do conjunto de genes que apresentam intensidade de luz semelhantes pareadas por indivíduos, agrupando por similaridade através de técnica de agrupamento hierárquico;
+- Observar a consistência entre os genes agrupados e as intensidades de luz apresentada para cada indivíduo;
+- Unificar a distribuição de intensidade de luz contida em cada grupo de genes;
+- Identificar se há possibilidade de discriminar os níveis de cada variável característica do conjunto de indivíduos, podendo concluir quais grupos de genes têm relação com cada característica.
 
 ## Código
 
@@ -102,14 +65,16 @@ library(tidyverse)
 library(dplyr)
 library(cluster)
 library(infotheo)
-# library(reticulate) 
+library(stringr)
+# library(ggpubr)
+library(patchwork)
 ```
 
 ### Conjunto de dados
 
 ```{r}
 load("glioma.RData") # geneInfo ; gliomaGSE52009 ; targetInfoGlioma
-glioma <- gliomaGSE52009[1:500,]; as.data.frame(glioma)
+glioma <- gliomaGSE52009[1:50,]; as.data.frame(glioma)
 info <- targetInfoGlioma; rownames(info) <- NULL; info |> select(colnames(info[,-1]),FileName)
 ```
 
@@ -165,21 +130,37 @@ unique(info$tissue)
 
 ### Agrupamento dos genes
 
-Aplica-se um agrupamento hierárquico para simplificar conjunto de genes que apresentam mesma intensidade de luminosidade para cada indivíduo. Dessa forma, e levando em consideração que os dados são coletados sob a mesma medida, opta-se por não padronizá-los. Caso fossem padronizados, alguns intensidades não expressivas poderiam ser conectadas com outras mais expressivas originalmente.
+Aplica-se um agrupamento hierárquico para simplificar conjunto de genes que apresentam mesma intensidade de luminosidade para cada indivíduo. Dessa forma, e levando em consideração que os dados são coletados sob a mesma medida, opta-se por não padronizá-los. Caso fossem padronizados, algumas intensidades não expressivas poderiam ser conectadas com outras mais expressivas originalmente (quando considerados os valores não padronizados).
 
 ```{r}
-d<-dist(glioma,method = "euclidean") # calculando a distância euclidiana entre cada gene
+custom_dist <- function(x, y) exp((x-y)**2) # penaliza mais para grandes erros
+
+d <- proxy::dist(glioma[,1], method=custom_dist)
+for(i in 2:ncol(glioma)){
+  d <- d + proxy::dist(glioma[,i], method=custom_dist)
+}
 ```
 
-Average linkage: It is the average distance between each point in one cluster to every point in the other cluster
+Para a junção dos clusters, tem-se algumas ordens de hierarquização, tais quais:
 
-Centroid linkage: The distance between the center point in one cluster to the center point in the other cluster
+<div style="display: flex; justify-content: center;padding:10px">
+<img src="linkages.png" alt="Linkages representação" style="max-height: 80vh; padding: 15px; max-width:100% !important;object-fit:contain"/>
+</div>
 
-Ward’s linkage: A combination of average and centroid methods. The within cluster variance is calculated by determining the center point of the cluster and the distance of the observations from the center. While trying to merge two clusters, the variance is found between the clusters and the clusters are merged whose variance is less compared to the other combination.
+- *Single linkage*: É a distância mais curta entre quaisquer dois pontos nos dois grupos.
+
+- *Complete linkage*: É o oposto do single linkage. É a distância mais longa entre quaisquer dois pontos nos dois grupos.
+
+- *Average linkage*: É a média das distâncias entre cada ponto de um grupo para todos os pontos do outro grupo.
+
+- *Centroid linkage*: A distância entre o ponto central de um grupo ao ponto central do outro grupo.
+
+- *Ward's linkage*: Uma combinação dos métodos average e centroid. A variância dentro do grupo é calculada determinando o ponto central do grupo e a distância das observações em relação ao centro. Ao tentar mesclar dois grupos, a variância é calculada entre os grupos e os grupos são mesclados se sua variância for menor em comparação com outras combinações.
+
 
 ```{r}
-hc<-hclust(d ,method="ward.D") # Hierarchical Cluster com linkage por Ward.D
-num_cluster_init <- 15; init_clusters = cutree(hc, num_cluster_init) # pegando os clusters iniciais 
+hc<-hclust(d, method = "ward.D") # Hierarchical Cluster com linkage por Ward.D
+num_cluster_init <- 20; init_clusters = cutree(hc, num_cluster_init) # pegando os clusters iniciais 
 ```
 
 ```{r}
@@ -192,16 +173,20 @@ genes.clusters <- list()
 for(clust in 1:num_cluster_init){
   gp <- glioma[which(init_clusters==clust),] # selecionando o cluster
   
-  bounds <- apply(gp,MARGIN = 2, FUN = function(x) quantile(x,c(0.15,0.85))) # definindo os intervalos interquartil para cada indivíduo nesse conjunto de genes
-  
-  # identificando cada intensidade dentro do cluster se está dentro do interquartil do indíviduo
-  in_bound <- as.data.frame(lapply(1:ncol(gp), FUN= function(i) {as.numeric(between(gp[,i],bounds[1,i],bounds[2,i]))})); colnames(in_bound) <- colnames(bounds); rownames(in_bound) <- rownames(gp)
-  
-  # manter no cluster apenas os genes que se apresentaram bastante no todo da amostra dentro do interquartil da intensidade de cada indivíduo 
-  select_genes <- apply(in_bound, MARGIN = 1, function(x) sum(x)) >= 0.7*ncol(glioma)
-  select_names <- names(which(select_genes==T))
-  if(length(select_names)>0){
-    genes.clusters <- append(genes.clusters,list(select_names))
+  if(is.null(nrow(gp))) {
+    next
+  } else{
+    bounds <- apply(gp,MARGIN = 2, FUN = function(x) quantile(x,c(0.15,0.85))) # definindo os intervalos interquantil para cada indivíduo nesse conjunto de genes
+    
+    # identificando cada intensidade dentro do cluster se está dentro do interquantil do indíviduo
+    in_bound <- as.data.frame(lapply(1:ncol(gp), FUN= function(i) {as.numeric(between(gp[,i],bounds[1,i],bounds[2,i]))})); colnames(in_bound) <- colnames(bounds); rownames(in_bound) <- rownames(gp)
+    
+    # manter no cluster apenas os genes que se apresentaram bastante no todo da amostra dentro do intenquartil da intensidade de cada indivíduo 
+    select_genes <- apply(in_bound, MARGIN = 1, function(x) sum(x)) >= 0.7*ncol(glioma)
+    select_names <- names(which(select_genes==T))
+    if(length(select_names)>1){
+      genes.clusters <- append(genes.clusters,list(select_names))
+    }
   }
 }
 
@@ -226,7 +211,7 @@ mutualinfo_clust <- list()
 for(clust in 1:length(genes.clusters)){
   cluster_disc_temp <- apply(glioma[genes.clusters[[clust]],], MARGIN = c(1,2),function(x) cut(x, breaks)) # discretizando cluster
   
-  mutualinfo_clust <- append(mutualinfo_clust,multiinformation(t(cluster_disc_temp))) # Correlação total (em nats - quando usado logaritmo natural para entropia)
+  mutualinfo_clust <- append(mutualinfo_clust,multiinformation(t(cluster_disc_temp))) # Correlação Total (em nats - quando usado logaritmo natural para entropia)
 }
 
 for(i in 1:length(genes.clusters)){
@@ -235,9 +220,124 @@ for(i in 1:length(genes.clusters)){
 }
 ```
 
+```{r}
+ind_bound <- max(quantile(unlist(mutualinfo_clust),0.25)[[1]],1); ind_bound # métrica para clusters consistentes
 
+clusters_consistentes <- which(mutualinfo_clust<ind_bound); clusters_consistentes # Clusters consistentes (com distribuição de intensidade luminosa similar)
+```
+```{r}
+df_consistentes <- data.frame()
+for(clust in clusters_consistentes){
+  # definindo a mediana das intensidades luminosas para cada indivíduo da amostra considerando todos genes do cluster
+  cluster_dist <- apply(glioma[genes.clusters[[clust]],], MARGIN=2, FUN= function(x) median(x)) 
+  df_consistentes <- rbind(df_consistentes, data.frame(t(cluster_dist), row.names = clust))
+}
+
+# distribuições das intensidades lumninosas unificada por cluster
+df_consistentes
+```
 
 ### Discriminação de características
 
-# Conclusão
+Tem-se 3 características de cada indívíduo disponibilizadas conforme visto na seção de apresentação do conjunto de dados: gênero, idade e diagnóstico. Com isso, verifica-se se há distinção da distribuição de cada nível de tais características por cluster de genes consistentes obtidos anteriormente.
 
+Contudo, inicialmente, é realizado um breve tratamento nos dados: para a análise dos níveis de gênero, desconsidera-se as entradas como "*unknow*"; além disso, categoriza-se a idade, e despreza-se os dados com entrada inválida como idade negativa; por fim, para a informação sobre diagnóstico, separa-se em 6 diagnósticos já apresentados, e em dois tipos - anaplástico e plástico.
+
+Dessa forma, para cada cluster, tem-se a visualização da distribuição da luminosidade para esses diferentes grupos, e espera-se identificar clusters que discriminizam bem alguma característica.
+
+```{r}
+valid_gender <- info |> filter(gender != "unknown") |> select(id = geoAccession, gender)
+
+valid_age <- info |> filter(age > 0) |> select(id = geoAccession, age)
+valid_age$cat_age <- cut(valid_age$age, breaks = c(0,7,14,20,30,40,50,60,70,80,100))
+
+valid_diag <- info |> select(id = geoAccession, diagnostic) |> 
+  mutate(diag_type = case_when(
+    str_detect(diagnostic, "anaplastic") ~ "anaplastic",
+    TRUE ~ "plastic"
+    )
+  )
+```
+
+```{r, class.source = 'fold-hide', results='asis', out.width="80%", fig.asp=3/7}
+for(clust in clusters_consistentes){
+  meio_p1 <- sum(range(df_consistentes[as.character(clust),valid_gender$id]))/2
+  med_p1 <- median(unlist(df_consistentes[as.character(clust),valid_gender$id]))
+  leg_dir_p1 <- ifelse(med_p1<meio_p1, 1, 0)
+  
+  p1 <- data.frame(int_luz = unlist(df_consistentes[as.character(clust),valid_gender$id]), gender = valid_gender$gender) |> 
+    ggplot(aes(x = int_luz, fill = factor(gender), color=factor(gender))) +
+    geom_density(alpha = 0.2) + 
+    scale_fill_manual(values = c(male="#1775ff",female="#ff371c"), name=NULL)+
+    scale_color_manual(values = c(male="#1775ff",female="#ff371c"), name=NULL)+
+    scale_y_continuous(expand = expansion(mult=c(0,.10)))+
+    scale_x_continuous(expand= c(0,0))+
+    theme(legend.position = c(leg_dir_p1,1), legend.justification = c(leg_dir_p1,1), legend.background = element_rect(fill = "#00000050"), plot.title = element_text(hjust=0), legend.key = element_rect(color="transparent", fill="transparent"))+
+    labs(x= "Intensidade luminosa", y="Densidade", title="Gênero")
+  
+  meio_p2 <- sum(range(df_consistentes[as.character(clust),valid_age$id]))/2
+  med_p2 <- median(unlist(df_consistentes[as.character(clust),valid_age$id]))
+  leg_dir_p2 <- ifelse(med_p2<meio_p2, 1, 0)
+  
+  p2 <- data.frame(int_luz = unlist(df_consistentes[as.character(clust),valid_age$id]), age = valid_age$cat_age) |> 
+    ggplot(aes(x = int_luz, fill = factor(age), color=factor(age))) +
+    geom_density(alpha = 0.2)+
+    scale_fill_discrete(name=NULL)+
+    scale_color_discrete(name=NULL)+
+    scale_y_continuous(expand = expansion(mult=c(0,.10)))+
+    scale_x_continuous(expand= c(0,0))+
+    theme(legend.position = c(leg_dir_p2,1), legend.justification = c(leg_dir_p2,1), legend.background = element_rect(fill = "#00000050"), plot.title = element_text(hjust=0), legend.key = element_rect(color="transparent", fill="transparent"))+
+    labs(x= "Intensidade luminosa", y="Densidade", title="Faixa etária")
+  
+  meio_p34 <- sum(range(df_consistentes[as.character(clust),valid_diag$id]))/2
+  med_p34 <- median(unlist(df_consistentes[as.character(clust),valid_diag$id]))
+  leg_dir_p34 <- ifelse(med_p34<meio_p34, 1, 0)
+  
+  p3 <- data.frame(int_luz = unlist(df_consistentes[as.character(clust),valid_diag$id]), diagnostic = valid_diag$diagnostic) |> 
+    ggplot(aes(x = int_luz, fill = factor(diagnostic), color=factor(diagnostic))) +
+    geom_density(alpha = 0.2) + 
+    guides(fill=guide_legend(title=NULL), color=guide_legend(title=NULL))+
+    scale_y_continuous(expand = expansion(mult=c(0,.10)))+
+    scale_x_continuous(expand= c(0,0))+
+    theme(legend.position = c(leg_dir_p34,1), legend.justification = c(leg_dir_p34,1), legend.background = element_rect(fill = "#00000050"), plot.title = element_text(hjust=0), legend.key = element_rect(color="transparent", fill="transparent"))+
+    labs(x= "Intensidade luminosa", y="Densidade", title="Diagnóstico")
+  
+  p4 <- data.frame(int_luz = unlist(df_consistentes[as.character(clust),valid_diag$id]), diagnostic = valid_diag$diag_type) |> 
+    ggplot(aes(x = int_luz, fill = factor(diagnostic), color=factor(diagnostic))) +
+    geom_density(alpha = 0.2) + 
+    scale_fill_manual(values=c("anaplastic"="#5ed19f","plastic"="#c753f5"))+
+    scale_color_manual(values=c("anaplastic"="#5ed19f","plastic"="#c753f5"))+
+    guides(fill=guide_legend(title=NULL), color=guide_legend(title=NULL))+
+    scale_y_continuous(expand = expansion(mult=c(0,.10)))+
+    scale_x_continuous(expand= c(0,0))+
+    theme(legend.position = c(leg_dir_p34,1), legend.justification = c(leg_dir_p34,1), legend.background = element_rect(fill = "#00000050"), plot.title = element_text(hjust=0), legend.key = element_rect(color="transparent", fill="transparent"))+
+    labs(x= "Intensidade luminosa", y="Densidade", title="Tipo de diagnóstico")
+  
+  ptot1 <- p1+p2+plot_layout(ncol = 2) & theme(
+  panel.border = element_blank(),
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(),
+  plot.background = element_rect(fill="#0c0c0c", color="#0c0c0c"),
+  text = element_text(size=8)
+  )
+  
+  ptot2 <- p3+p4+plot_layout(ncol = 2) & theme(
+  panel.border = element_blank(),
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(),
+  plot.background = element_rect(fill="#0c0c0c", color="#0c0c0c"),
+  text = element_text(size=8)
+  )
+  
+  cat("<pre>--- Cluster ", clust, ":</pre>","\n")
+  cat("\n")
+  print(ptot1)
+  print(ptot2)
+  cat("\n\n")
+}
+```
+
+
+
+
+# Conclusão
