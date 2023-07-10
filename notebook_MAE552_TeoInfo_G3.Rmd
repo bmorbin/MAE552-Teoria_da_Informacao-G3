@@ -164,7 +164,7 @@ Para a junção dos clusters, tem-se algumas ordens de hierarquização, tais qu
 
 ```{r}
 hc<-hclust(d, method = "ward.D") # Hierarchical Cluster com linkage por Ward.D
-num_cluster_init <- 20; init_clusters = cutree(hc, num_cluster_init) # pegando os clusters iniciais 
+num_cluster_init <- 30; init_clusters = cutree(hc, num_cluster_init) # pegando os clusters iniciais 
 ```
 
 ```{r}
@@ -180,13 +180,13 @@ for(clust in 1:num_cluster_init){
   if(is.null(nrow(gp))) {
     next
   } else{
-    bounds <- apply(gp,MARGIN = 2, FUN = function(x) quantile(x,c(0.15,0.85))) # definindo os intervalos interquantil para cada indivíduo nesse conjunto de genes
+    bounds <- apply(gp,MARGIN = 2, FUN = function(x) quantile(x,c(0.10,0.90))) # definindo os intervalos interquantil para cada indivíduo nesse conjunto de genes
     
     # identificando cada intensidade dentro do cluster se está dentro do interquantil do indíviduo
     in_bound <- as.data.frame(lapply(1:ncol(gp), FUN= function(i) {as.numeric(between(gp[,i],bounds[1,i],bounds[2,i]))})); colnames(in_bound) <- colnames(bounds); rownames(in_bound) <- rownames(gp)
     
     # manter no cluster apenas os genes que se apresentaram bastante no todo da amostra dentro do intenquartil da intensidade de cada indivíduo 
-    select_genes <- apply(in_bound, MARGIN = 1, function(x) sum(x)) >= 0.7*ncol(glioma)
+    select_genes <- apply(in_bound, MARGIN = 1, function(x) sum(x)) >= 0.8*ncol(glioma)
     select_names <- names(which(select_genes==T))
     if(length(select_names)>1){
       genes.clusters <- append(genes.clusters,list(select_names))
@@ -206,8 +206,6 @@ for(i in 1:length(genes.clusters)){
 
 Agora que os genes já foram agrupados por similaridade, visualiza-se o valor da informação mútua entre e intra os grupos com os genes selecionados. Para isso, será necessário discretizar as entradas para então obter as distribuições empirícas de cada gene.
 
-<https://search.r-project.org/CRAN/refmans/infotheo/html/multiinformation.html>
-
 ```{r}
 breaks <- seq(floor(min(glioma)), ceiling(max(glioma)), by=1) # definindo intervalos para discretizar
 
@@ -215,6 +213,7 @@ mutualinfo_clust <- list()
 for(clust in 1:length(genes.clusters)){
   cluster_disc_temp <- apply(glioma[genes.clusters[[clust]],], MARGIN = c(1,2),function(x) cut(x, breaks)) # discretizando cluster
   
+  # https://search.r-project.org/CRAN/refmans/infotheo/html/multiinformation.html
   mutualinfo_clust <- append(mutualinfo_clust,multiinformation(t(cluster_disc_temp))) # Correlação Total (em nats - quando usado logaritmo natural para entropia)
 }
 
@@ -225,7 +224,7 @@ for(i in 1:length(genes.clusters)){
 ```
 
 ```{r}
-ind_bound <- max(quantile(unlist(mutualinfo_clust),0.25)[[1]],1); ind_bound # métrica para clusters consistentes
+ind_bound <- max(quantile(unlist(mutualinfo_clust),0.35)[[1]],1); ind_bound # métrica para clusters consistentes
 
 clusters_consistentes <- which(mutualinfo_clust<ind_bound); clusters_consistentes # Clusters consistentes (com distribuição de intensidade luminosa similar)
 ```
