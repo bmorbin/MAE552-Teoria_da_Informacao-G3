@@ -180,7 +180,7 @@ for(clust in 1:num_cluster_init){
   if(is.null(nrow(gp))) {
     next
   } else{
-    bounds <- apply(gp,MARGIN = 2, FUN = function(x) quantile(x,c(0.10,0.90))) # definindo os intervalos interquantil para cada indivíduo nesse conjunto de genes
+    bounds <- apply(gp,MARGIN = 2, FUN = function(x) quantile(x,c(0.20,0.80))) # definindo os intervalos interquantil para cada indivíduo nesse conjunto de genes
     
     # identificando cada intensidade dentro do cluster se está dentro do interquantil do indíviduo
     in_bound <- as.data.frame(lapply(1:ncol(gp), FUN= function(i) {as.numeric(between(gp[,i],bounds[1,i],bounds[2,i]))})); colnames(in_bound) <- colnames(bounds); rownames(in_bound) <- rownames(gp)
@@ -339,8 +339,6 @@ for(clust in clusters_consistentes){
   cat("\n\n")
 }
 ```
-
-
 
 
 # Conclusão
